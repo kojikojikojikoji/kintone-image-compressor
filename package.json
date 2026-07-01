@@ -1,0 +1,36 @@
+{
+  "name": "kintone-image-compressor",
+  "version": "0.1.0",
+  "description": "Resize and re-encode images in the browser before attaching them to a kintone attachment field. No external transmission.",
+  "author": "Koji Miyazawa",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "icon": "node scripts/build-icon.mjs",
+    "pack": "npm run build && node scripts/pack.mjs"
+  },
+  "dependencies": {
+    "@kintone/rest-api-client": "^5.6.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@kintone/plugin-packer": "^8.1.1",
+    "@playwright/test": "^1.44.1",
+    "@types/node": "^20.14.2",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "adm-zip": "^0.5.12",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.2",
+    "typescript": "^5.4.5",
+    "vite": "^5.3.1",
+    "vitest": "^1.6.0"
+  }
+}

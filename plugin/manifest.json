@@ -1,0 +1,32 @@
+{
+  "manifest_version": 2,
+  "version": 1,
+  "type": "APP",
+  "name": {
+    "en": "Image Compressor",
+    "ja": "画像圧縮"
+  },
+  "description": {
+    "en": "Resize and re-encode images in the browser before attaching them to an attachment field. Runs entirely in the browser with no external transmission.",
+    "ja": "添付前にブラウザ内で画像を縮小・再エンコードしてから添付ファイルフィールドに追加します。外部送信はありません。"
+  },
+  "icon": "icon.png",
+  "homepage_url": {
+    "en": "https://github.com/kojimiyazawa/kintone-image-compressor",
+    "ja": "https://github.com/kojimiyazawa/kintone-image-compressor"
+  },
+  "desktop": {
+    "js": ["desktop.js"],
+    "css": []
+  },
+  "mobile": {
+    "js": ["mobile.js"],
+    "css": []
+  },
+  "config": {
+    "html": "config.html",
+    "js": ["config.js"],
+    "css": ["theme.css"],
+    "required_params": []
+  }
+}
