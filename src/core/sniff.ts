@@ -81,6 +81,11 @@ function jpegDimensions(b: Uint8Array): Dimensions | null {
     const isSof =
       marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc;
     if (isSof) {
+      // The SOF payload needs length(2) + precision(1) + height(2) + width(2);
+      // reject a segment whose declared length cannot contain dimensions. The
+      // loop condition already guarantees the bytes themselves are in range.
+      const sofLen = read16BE(b, i + 2);
+      if (sofLen < 7) return null;
       const height = read16BE(b, i + 5);
       const width = read16BE(b, i + 7);
       if (width > 0 && height > 0) return { width, height };
@@ -95,6 +100,9 @@ function jpegDimensions(b: Uint8Array): Dimensions | null {
 
 function pngDimensions(b: Uint8Array): Dimensions | null {
   if (b.length < 24) return null;
+  // The first chunk must be a 13-byte IHDR; otherwise offsets 16/20 are not
+  // dimensions at all.
+  if (read32BE(b, 8) !== 13 || ascii(b, 12, 4) !== "IHDR") return null;
   const width = read32BE(b, 16);
   const height = read32BE(b, 20);
   if (width > 0 && height > 0) return { width, height };
@@ -166,12 +174,15 @@ export function isApng(bytes: Uint8Array): boolean {
 }
 
 interface TiffReader {
+  /** Bytes available from the TIFF header to the end of the buffer. */
+  size: number;
   u16(o: number): number;
   u32(o: number): number;
 }
 
 function makeTiffReader(b: Uint8Array, base: number, little: boolean): TiffReader {
   return {
+    size: b.length - base,
     u16: (o: number) =>
       little ? b[base + o] | (b[base + o + 1] << 8) : (b[base + o] << 8) | b[base + o + 1],
     u32: (o: number) =>
@@ -217,7 +228,11 @@ function readIfdTag(
   ifdOffset: number,
   wantedTag: number,
 ): { type: number; count: number; valueOffset: number } | null {
-  const count = r.u16(ifdOffset);
+  // Malformed EXIF can point the IFD anywhere; keep every read inside the
+  // buffer and never trust the declared entry count beyond what fits.
+  if (!Number.isFinite(ifdOffset) || ifdOffset < 0 || ifdOffset + 2 > r.size) return null;
+  const declared = r.u16(ifdOffset);
+  const count = Math.min(declared, Math.floor((r.size - ifdOffset - 2) / 12));
   for (let e = 0; e < count; e += 1) {
     const off = ifdOffset + 2 + e * 12;
     const tag = r.u16(off);

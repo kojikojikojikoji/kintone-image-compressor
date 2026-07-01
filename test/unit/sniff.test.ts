@@ -70,3 +70,42 @@ describe("readExifDateTimeOriginal (TC-9)", () => {
     expect(readExifDateTimeOriginal(jpegWithSof(100, 100))).toBeNull();
   });
 });
+
+describe("malformed headers stay null", () => {
+  it("rejects a JPEG SOF whose segment is too short for dimensions", () => {
+    // FF D8 FF, then SOF0 with declared length 2 (no room for h/w) and junk.
+    const b = new Uint8Array([
+      0xff, 0xd8, 0xff, 0xc0, 0x00, 0x02, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc,
+    ]);
+    expect(readDimensions("jpeg", b)).toBeNull();
+  });
+
+  it("rejects a PNG whose first chunk is not a 13-byte IHDR", () => {
+    const b = new Uint8Array(32);
+    b.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
+    // Chunk length 4, type "junk", then arbitrary bytes where IHDR dims live.
+    b.set([0x00, 0x00, 0x00, 0x04], 8);
+    b.set([0x6a, 0x75, 0x6e, 0x6b], 12);
+    b.set([0x00, 0x01, 0x00, 0x00], 16);
+    expect(readDimensions("png", b)).toBeNull();
+  });
+
+  it("survives an EXIF IFD offset pointing far outside the buffer", () => {
+    // Minimal JPEG with an APP1 Exif segment whose IFD0 offset is huge.
+    const b = new Uint8Array([
+      0xff, 0xd8, 0xff, 0xe1, 0x00, 0x14, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00,
+      // TIFF header, little endian, magic 0x2A, IFD0 offset 0x7fffffff
+      0x49, 0x49, 0x2a, 0x00, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0xff, 0xd9,
+    ]);
+    expect(readExifDateTimeOriginal(b)).toBeNull();
+  });
+
+  it("caps a declared IFD entry count that does not fit the buffer", () => {
+    // Valid TIFF start but entry count 0xFFFF with only a few bytes behind it.
+    const b = new Uint8Array([
+      0xff, 0xd8, 0xff, 0xe1, 0x00, 0x14, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00, 0x49, 0x49, 0x2a,
+      0x00, 0x08, 0x00, 0x00, 0x00, 0xff, 0xff, 0x01, 0x02,
+    ]);
+    expect(readExifDateTimeOriginal(b)).toBeNull();
+  });
+});
