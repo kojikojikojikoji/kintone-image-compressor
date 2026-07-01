@@ -1,5 +1,7 @@
 # kintone-image-compressor
 
+Documentation in Japanese: [README.ja.md](./README.ja.md)
+
 Resize and re-encode images in the browser before attaching them to a kintone
 attachment field. A phone photo of 4-12 MB is scaled to a long edge of 1920 px
 and re-encoded as JPEG at quality 0.8, which usually brings it down to a few
